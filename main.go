@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"time"
 )
 
@@ -96,10 +97,18 @@ func addDirToZip(writer *zip.Writer, path string) error {
 		if err != nil {
 			return fmt.Errorf("failed walking dir: %w", err)
 		}
-		if !d.IsDir() { // WalkDir handles cases if d.IsDir() is true
+		if d.IsDir() {
+			// this is just because zip tool has slash at the end for directories
+			if !strings.HasSuffix(path, "/") {
+				path = path + "/"
+			}
+			fmt.Println("  adding:", path)
+			_, err = writer.Create(path)
+			return err
+		} else {
+			fmt.Println("  adding:", path)
 			return addSingleFile(writer, path)
 		}
-		return nil
 	})
 }
 
