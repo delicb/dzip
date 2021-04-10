@@ -10,7 +10,9 @@ is missing (some functionalities might be added).
 As opposed to `zip`, `dzip` handles directories automatically, without `-r` flag. 
 
 ## Install
-Until release is tagged, use latest version:
+Fetch latest version from [releases](https://github.com/delicb/dzip/releases) page.
+
+Of, if you have go installed:
 ```shell
 go install github.com/delicb/dzip@latest
 ```
