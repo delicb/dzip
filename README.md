@@ -4,6 +4,11 @@ that can be found on Unix systems, but ensures that for same input, output is al
 the same if content of input files is not changed. This means that `md5` or `sha1` 
 hash of output zip file should not change if inputs files have not changed. 
 
+It is not drop-in replacement of `zip`, almost everything except basic zipping functionality
+is missing (some functionalities might be added).
+
+As opposed to `zip`, `dzip` handles directories automatically, without `-r` flag. 
+
 ## Install
 Until release is tagged, use latest version:
 ```shell
@@ -29,18 +34,13 @@ This will create `compressed.zip` file.
 Notice the following flow:
 ```shell
 $ echo "content" > file
-
 $ zip zipped.zip file
   adding: file (stored 0%)
-
 $ sha1sum zipped.zip
 deae7f2b7ca74c6456628007a6a5483821b64ac6  zipped.zip
-
 $ touch file
-
 $ zip zipped2.zip file
   adding: file (stored 0%)
-
 $ sha1sum zipped2.zip
 5522a73b8861f0daf56844835f6a981a605f18e4  zipped2.zip
 ```
@@ -48,19 +48,13 @@ $ sha1sum zipped2.zip
 Now, compare the same flow with `dzip`
 ```shell
 $ echo "content" > file
-
 $ dzip zipped.zip file
-
 $ sha1sum zipped.zip
 775a7ce2fb33ddcc4297897c39891907026a6e54  zipped.zip
-
 $ touch file
-
 $ dzip zipped2.zip file
-
 $ sha1sum zipped2.zip
 775a7ce2fb33ddcc4297897c39891907026a6e54  zipped2.zip
-
 ```
 
 Even when file content is not changed, `zip` produces output with a different hash.
