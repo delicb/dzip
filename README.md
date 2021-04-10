@@ -1,0 +1,59 @@
+# dzip
+`dzip` is small utility that implements subset of functionality of standard `zip` tool
+that can be found on Unix systems, but ensures that for same input, output is always
+the same if content of input files is not changed. This means that `md5` or `sha1` 
+hash of output zip file should not change if inputs files have not changed. 
+
+## Install
+Until release is tagged, simply clone and build (Go required):
+```shell
+git clone https://github.com/delicb/dzip.git && cd dzip
+go build
+```
+
+## Usage
+Invoke `dzip` with path to output file as first argument and list of input paths.
+
+For example
+```shell
+dzip compressed.zip input1.txt input2
+```
+
+This will create `compressed.zip` file. 
+
+## Why
+A lot of tools use checksum of input file to determine if further actions are needed. 
+This is especially important in CI systems, since expensive operations can be prevented
+if it is determined that input has not changed. Terraform, AWS CDK and similar use this 
+approach. 
+
+Standard `zip` tool changes its output checksum even if content compressed is not changed. 
+This is because it is using meta information like:
+- modification time
+- permissions on a file
+- file ordering is important
+
+When used in CI system, modification time of a file is something that should not be
+trusted. Even locally, if you change `git` branch, for example, modification time can
+be change even if content is he same. Or if you run a build and get the same output as 
+in previous build (content and checksum), modification time of output file will be 
+different and `zip` will treat it differently.
+
+Simple solution would be to use some other compression format (and I recommend that), but
+some systems require zip (e.g. AWS Lambda), hence this tool.
+
+## Further development
+For now, this works for me. Except potential fixes, I do not plan to add more 
+functionality until needed.
+
+If I happen to need more functionality that exists in `zip` tool, I might add it.
+
+However, if you find this tool useful and find some missing functionality, please let me
+know by opening a ticket or sending pull request, as mentioned in Contribution section. 
+
+## Contribution
+Tool is created to scratch a personal itch, but if you find it useful and want to contribute,
+please feel free to open an issue or, better, send a pull request. 
+
+## Author
+- Bojan Delic <bojan@delic.in.rs>
