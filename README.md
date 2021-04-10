@@ -79,6 +79,20 @@ different and `zip` will treat it differently.
 Simple solution would be to use some other compression format (and I recommend that), but
 some systems require zip (e.g. AWS Lambda), hence this tool.
 
+## Caveats
+Be warned that `dzip` changes some behaviors of normal `zip` util. 
+
+- does not store modification time of files
+- does not preserve permissions or any file attributes. 
+  If file does not have exec permission (for user, group or other)
+  it's permission will be stored as 0444. If it does have any
+  exec permission, permissions 0555 will be stored. With this, 
+  upon unzipping, executable files will still be executable, but
+  other permissions will not be transferred, so keep that in mind.
+- does not store any extra attributes
+- no way to specify store-only, `dzip` always does compression
+- potentially other things
+
 ## Further development
 For now, this works for me. Except potential fixes, I do not plan to add more 
 functionality until needed.
