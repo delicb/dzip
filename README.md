@@ -14,7 +14,7 @@ As opposed to `zip`, `dzip` handles directories automatically, without `-r` flag
 ## Install
 Fetch latest version from [releases](https://github.com/delicb/dzip/releases) page.
 
-Of, if you have go installed:
+Of, if you have [Go](https://golang.org/) installed:
 ```shell
 go install github.com/delicb/dzip@latest
 ```
