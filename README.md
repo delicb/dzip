@@ -26,6 +26,45 @@ dzip compressed.zip input1.txt input2
 This will create `compressed.zip` file. 
 
 ## Why
+Notice the following flow:
+```shell
+$ echo "content" > file
+
+$ zip zipped.zip file
+  adding: file (stored 0%)
+
+$ sha1sum zipped.zip
+deae7f2b7ca74c6456628007a6a5483821b64ac6  zipped.zip
+
+$ touch file
+
+$ zip zipped2.zip file
+  adding: file (stored 0%)
+
+$ sha1sum zipped2.zip
+5522a73b8861f0daf56844835f6a981a605f18e4  zipped2.zip
+```
+
+Now, compare the same flow with `dzip`
+```shell
+$ echo "content" > file
+
+$ dzip zipped.zip file
+
+$ sha1sum zipped.zip
+775a7ce2fb33ddcc4297897c39891907026a6e54  zipped.zip
+
+$ touch file
+
+$ dzip zipped2.zip file
+
+$ sha1sum zipped2.zip
+775a7ce2fb33ddcc4297897c39891907026a6e54  zipped2.zip
+
+```
+
+Even when file content is not changed, `zip` produces output with a different hash.
+
 A lot of tools use checksum of input file to determine if further actions are needed. 
 This is especially important in CI systems, since expensive operations can be prevented
 if it is determined that input has not changed. Terraform, AWS CDK and similar use this 
