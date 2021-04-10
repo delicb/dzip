@@ -1,4 +1,6 @@
 # dzip
+[![Test](https://github.com/delicb/dzip/actions/workflows/test.yaml/badge.svg)](https://github.com/delicb/dzip/actions/workflows/test.yaml)
+
 `dzip` is small utility that implements subset of functionality of standard `zip` tool
 that can be found on Unix systems, but ensures that for same input, output is always
 the same if content of input files is not changed. This means that `md5` or `sha1` 
