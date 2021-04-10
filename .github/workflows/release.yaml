@@ -1,0 +1,40 @@
+name: Releases
+
+on:
+  push:
+    tags:
+      - 'v*'
+    branches:
+      - main
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: ['linux', 'darwin', 'windows']
+        arch: ['386', 'amd64', 'arm64', 'arm']
+        exclude:
+          - os: windows
+            arch: arm64
+          - os: darwin
+            arch: arm
+          - os: darwin
+            arch: '386'
+    runs-on: 'ubuntu-latest'
+    steps:
+      - uses: actions/setup-go@v2
+        with:
+          go-version: "1.16"
+      - uses: actions/checkout@v2
+      - name: Build
+        run: |
+          GOOS=${{ matrix.os }} GOARCH=${{ matrix.arch }} go build -o dzip
+          tar czf dzip-${{ matrix.os }}-${{ matrix.arch }}.tar.gz dzip LICENSE
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            dzip-*.tar.gz
+            LICENSE
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
