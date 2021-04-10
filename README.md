@@ -5,10 +5,14 @@ the same if content of input files is not changed. This means that `md5` or `sha
 hash of output zip file should not change if inputs files have not changed. 
 
 ## Install
-Until release is tagged, simply clone and build (Go required):
+Until release is tagged, use latest version:
 ```shell
-git clone https://github.com/delicb/dzip.git && cd dzip
-go build
+go install github.com/delicb/dzip@latest
+```
+
+Or, you know, clone and build:
+```shell
+git clone https://github.com/delicb/dzip.git && cd dzip && go install
 ```
 
 ## Usage
