@@ -90,8 +90,8 @@ func TestDeterministicOnModifyTimeChange(t *testing.T) {
 }
 
 func zipFile(t *testing.T, what, dest string) {
-	if err := exec.Command(dzipExecutable, dest, what).Run(); err != nil {
-		t.Fatalf("failed to zip file: %v", err)
+	if out, err := exec.Command(dzipExecutable, dest, what).CombinedOutput(); err != nil {
+		t.Fatalf("failed to create zip file: %v\nCombined output is: \n%v", err, string(out))
 	}
 }
 
