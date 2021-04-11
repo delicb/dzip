@@ -13,12 +13,15 @@ import (
 )
 
 var (
-	fJunk bool
+	fJunk      bool
+	fOverwrite bool
 )
 
 func init() {
 	// initialize flags
 	flag.BoolVar(&fJunk, "j", false, "junk (don't record) directory names")
+	flag.BoolVar(&fOverwrite, "O", false, "overwrite (if exists) output file")
+
 }
 
 const usage = `
@@ -44,7 +47,6 @@ func main() {
 		os.Exit(1)
 	}
 
-
 	outputZipName := args[0]
 	inputFiles := args[1:]
 	// in order to process same inputs in same way, sort them, since changing order
@@ -58,11 +60,25 @@ func main() {
 }
 
 func createZip(output string, inputs []string) error {
-	// first make sure that file output file does not already exist, we do not want to overwrite it
-	if _, err := os.Stat(output); !os.IsNotExist(err) {
-		// only valid error should be IsNotExist, for anything else, we should fail
-		return fmt.Errorf("file already exists: %v", output)
+	// first make sure that file output file does not already exist, we do not want to overwrite it unless flag is given
+	outStat, err := os.Stat(output)
+	if err != nil {
+		// only error that is ok is notExist, for all other fail, since we could not perform stat
+		if !os.IsNotExist(err) {
+			return fmt.Errorf("failed checking file: %v: %v", output, err)
+		}
+	} else {
+		// file exists, allow continuing only if overwrite flag is provided
+		if !fOverwrite {
+			return fmt.Errorf("file already exists: %v, provide -O for overwrite", output)
+		}
 	}
+
+	// even if overwrite is given, we if it is a folder, it is probably an error, so check it here
+	if outStat != nil && outStat.IsDir() {
+		return fmt.Errorf("got existing directory as output, it should be a file")
+	}
+
 	out, err := os.Create(output)
 	if err != nil {
 		return fmt.Errorf("creating output: %w", err)
@@ -81,7 +97,6 @@ func createZip(output string, inputs []string) error {
 			fmt.Printf("failed to close zip file: %v", err)
 		}
 	}(zipWriter)
-
 
 	return addFilesToZip(zipWriter, inputs)
 }
@@ -128,7 +143,6 @@ func addDirToZip(writer *zip.Writer, path string) error {
 		}
 	})
 }
-
 
 func addSingleFile(zipWriter *zip.Writer, inputFile string) error {
 	toAdd, err := os.Open(inputFile)
@@ -189,7 +203,7 @@ func createZipHeader(info os.FileInfo, path string) (*zip.FileHeader, error) {
 	// first reset mode
 	header.SetMode(0)
 	// if file has exec perm, we want to preserve it
-	if info.Mode() & 0111 != 0 {
+	if info.Mode()&0111 != 0 {
 		header.SetMode(0555)
 	} else {
 		header.SetMode(0444)
