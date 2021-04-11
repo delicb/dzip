@@ -2,6 +2,7 @@ package main
 
 import (
 	"archive/zip"
+	"flag"
 	"fmt"
 	"io"
 	"os"
@@ -10,6 +11,15 @@ import (
 	"strings"
 	"time"
 )
+
+var (
+	fJunk bool
+)
+
+func init() {
+	// initialize flags
+	flag.BoolVar(&fJunk, "j", false, "junk (don't record) directory names")
+}
 
 const usage = `
 Usage: dzip <OUTPUT> <INPUTS>...
@@ -23,15 +33,20 @@ input always, which is not the case with traditional zip tool.
 `
 
 func main() {
-	// first arg is name of the program, second is output path and then list of inputs,
+	flag.Parse()
+	args := flag.Args()
+
+	// first arg is output path and then list of inputs,
 	// so we need 2+ arguments at minimal in order for command to make sense
-	if len(os.Args) <= 2 {
+	if len(args) < 2 {
 		fmt.Println("not enough arguments provided")
 		fmt.Print(usage)
 		os.Exit(1)
 	}
-	outputZipName := os.Args[1]
-	inputFiles := os.Args[2:]
+
+
+	outputZipName := args[0]
+	inputFiles := args[1:]
 	// in order to process same inputs in same way, sort them, since changing order
 	// changes the hash of output zip file
 	sort.Strings(inputFiles)
@@ -98,6 +113,9 @@ func addDirToZip(writer *zip.Writer, path string) error {
 			return fmt.Errorf("failed walking dir: %w", err)
 		}
 		if d.IsDir() {
+			if fJunk {
+				return nil // if we don't record directory names, there is no need to add them either
+			}
 			// this is just because zip tool has slash at the end for directories
 			if !strings.HasSuffix(path, "/") {
 				path = path + "/"
@@ -106,7 +124,6 @@ func addDirToZip(writer *zip.Writer, path string) error {
 			_, err = writer.Create(path)
 			return err
 		} else {
-			fmt.Println("  adding:", path)
 			return addSingleFile(writer, path)
 		}
 	})
@@ -151,8 +168,15 @@ func createZipHeader(info os.FileInfo, path string) (*zip.FileHeader, error) {
 		return header, err
 	}
 
-	// set name to full provided path, to preserve dir structure inside the zip
-	header.Name = path
+	// set name to full path on only path name, depending on junk flag
+	// if we use full name, structure is preserved within zip file, otherwise only
+	// filename is used, which means that flat zip is created.
+	if fJunk {
+		header.Name = filepath.Base(path)
+	} else {
+		header.Name = path
+	}
+	fmt.Println("  adding:", header.Name)
 
 	// this is deprecated and suggestion is to use Modified field instead
 	// however, in addition to Modified field there are ModifiedTime and ModifiedDate
