@@ -47,7 +47,7 @@ func hashFile(ts *testscript.TestScript, path string) string {
 	path = ts.MkAbs(path)
 	data, err := os.ReadFile(path)
 	if err != nil {
-		ts.Fatalf("failed to read file")
+		ts.Fatalf("failed to read file: %v", err)
 	}
 	hasher.Write(data)
 	return hex.EncodeToString(hasher.Sum(nil))
