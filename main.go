@@ -137,8 +137,8 @@ func addDirToZip(writer *zip.Writer, path string) error {
 				return nil // if we don't record directory names, there is no need to add them either
 			}
 			// this is just because zip tool has slash at the end for directories
-			if !strings.HasSuffix(path, string(filepath.Separator)) {
-				path = path + string(filepath.Separator)
+			if !strings.HasSuffix(path, "/") {
+				path = path + "/"
 			}
 			fmt.Println("  adding:", path)
 			_, err = writer.Create(path)
