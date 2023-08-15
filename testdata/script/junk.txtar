@@ -1,0 +1,15 @@
+exec dzip -j foo.zip $WORK/dir/file_a
+stdout 'adding'
+stdout 'file_a'
+exists foo.zip
+rm dir
+exec unzip foo.zip
+exec ls
+exec cat file_a
+stdout 'content of file a'
+
+-- dir/file_a --
+content of file a
+
+-- file_b --
+content of file b

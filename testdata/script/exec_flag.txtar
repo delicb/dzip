@@ -1,0 +1,12 @@
+chmod 511 file_exec
+exec dzip foo.zip file_exec file_non_exec
+mkdir extract
+exec unzip foo.zip -d extract
+hasexec extract/file_exec
+! hasexec extract/file_non_exec
+
+-- file_exec --
+file a content
+
+-- file_non_exec --
+file b content

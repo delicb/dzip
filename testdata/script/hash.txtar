@@ -1,0 +1,8 @@
+exec dzip f1.zip file_b
+chmtime $WORK/file_b
+exec dzip f2.zip file_b
+cmpfiles $WORK/f1.zip $WORK/f2.zip
+
+
+-- file_b --
+test

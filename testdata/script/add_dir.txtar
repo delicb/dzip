@@ -1,0 +1,15 @@
+exec dzip foo.zip dir1
+stdout adding
+stdout file1
+stdout file2
+
+mkdir extract
+exec unzip foo.zip -d extract
+cmpfiles dir1/file1 extract/dir1/file1
+cmpfiles dir1/dir2/file2 extract/dir1/dir2/file2
+
+-- dir1/file1 --
+file 1 content
+
+-- dir1/dir2/file2 --
+file 2 content

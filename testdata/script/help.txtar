@@ -1,0 +1,3 @@
+exec dzip --help
+stderr '-j\s+junk'
+stderr '-O\s+overwrite'

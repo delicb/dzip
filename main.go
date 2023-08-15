@@ -36,6 +36,10 @@ input always, which is not the case with traditional zip tool.
 `
 
 func main() {
+	os.Exit(Main())
+}
+
+func Main() int {
 	flag.Parse()
 	args := flag.Args()
 
@@ -44,7 +48,7 @@ func main() {
 	if len(args) < 2 {
 		fmt.Println("not enough arguments provided")
 		fmt.Print(usage)
-		os.Exit(1)
+		return 1
 	}
 
 	outputZipName := args[0]
@@ -55,8 +59,9 @@ func main() {
 
 	if err := createZip(outputZipName, inputFiles); err != nil {
 		fmt.Printf("failed creating zip: %v\n", err)
-		os.Exit(2)
+		return 2
 	}
+	return 0
 }
 
 func createZip(output string, inputs []string) error {
