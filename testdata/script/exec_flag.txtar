@@ -1,3 +1,4 @@
+[windows] skip
 chmod 511 file_exec
 exec dzip foo.zip file_exec file_non_exec
 mkdir extract
