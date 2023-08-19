@@ -1,128 +1,92 @@
 package main
 
 import (
-	"archive/zip"
-	"bytes"
 	"crypto/sha1"
-	"fmt"
-	"io"
+	"encoding/hex"
 	"os"
-	"os/exec"
-	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/rogpeppe/go-internal/testscript"
 )
 
-var dzipExecutable string
-
 func TestMain(m *testing.M) {
-	cleanup, err := ensureDzip()
-	if err != nil {
-		fmt.Println("### failed creating executable for test ###")
-		os.Exit(1)
-	}
-
-	testRunResult := m.Run()
-
-	cleanup()
-
-	os.Exit(testRunResult)
+	os.Exit(testscript.RunMain(m, map[string]func() int{
+		"dzip": Main,
+	}))
 }
 
-func TestExpectedContent(t *testing.T) {
-	tmpDir := t.TempDir()
-	zipFileName := filepath.Join(tmpDir, "out.zip")
-	localFileForTest := "testdata/file_a"
-
-	zipFile(t, localFileForTest, zipFileName)
-
-	zipReader, err := zip.OpenReader(zipFileName)
-	if err != nil {
-		t.Fatalf("failed opening newly created zip file: %v", err)
-	}
-	defer func(zipReader *zip.ReadCloser) {
-		err := zipReader.Close()
-		if err != nil {
-			t.Fatalf("failed closing zip file as part of cleanup: %v", err)
-		}
-	}(zipReader)
-
-	f, err := zipReader.Open(localFileForTest)
-	if err != nil {
-		t.Fatalf("failed opening compressed file in zip: %v", err)
-	}
-
-	compressedContent, err := io.ReadAll(f)
-	if err != nil {
-		t.Fatalf("failed reading compressed content: %v", err)
-	}
-
-	// read file from test data for comparison
-	localContent, err := os.ReadFile(localFileForTest)
-	if err != nil {
-		t.Fatalf("failed to read content of local file")
-	}
-
-	if !bytes.Equal(compressedContent, localContent) {
-		t.Fatalf("different content of local and compressed file. Got: %v, expected: %v", string(compressedContent), string(localContent))
-	}
-
+func TestScript(t *testing.T) {
+	testscript.Run(t, testscript.Params{
+		Dir: "testdata/script",
+		Cmds: map[string]func(ts *testscript.TestScript, neg bool, args []string){
+			"cmpfiles": cmdFiles,
+			"chmtime":  cmdChmtime,
+			"hasexec":  cmdHasExec,
+		},
+	})
 }
 
-func TestDeterministicOnModifyTimeChange(t *testing.T) {
-	// t.Cleanup(ensureDzip(t))
-
-	tmpDir := t.TempDir()
-	beforeZip := filepath.Join(tmpDir, "before.zip")
-	afterZip := filepath.Join(tmpDir, "after.zip")
-
-	zipFile(t, "./testdata", beforeZip)
-	// change modification time in one of the files
-	times := time.Now().Local()
-	if err := os.Chtimes("./testdata/file_a", times, times); err != nil {
-		t.Fatalf("failed to change modification time of a file: %v", err)
+func cmdFiles(ts *testscript.TestScript, neg bool, args []string) {
+	if len(args) != 2 {
+		ts.Fatalf("only one argument allowed for sha256")
 	}
-	zipFile(t, "./testdata", afterZip)
 
-	if !compareFileHashes(t, beforeZip, afterZip) {
-		t.Fatalf("hashes did not match after chaning modification time of a file")
+	hash1 := hashFile(ts, args[0])
+	hash2 := hashFile(ts, args[1])
+	if neg && hash1 == hash2 {
+		ts.Fatalf("found unexpectedly sane hashes")
+	}
+	if !neg && hash1 != hash2 {
+		ts.Fatalf("expected same file hashes, but they are different")
 	}
 }
 
-func zipFile(t *testing.T, what, dest string) {
-	if out, err := exec.Command(dzipExecutable, dest, what).CombinedOutput(); err != nil {
-		t.Fatalf("failed to create zip file: %v\nCombined output is: \n%v", err, string(out))
-	}
-}
-
-func compareFileHashes(t *testing.T, file1, file2 string) bool {
-	return bytes.Equal(hashFile(t, file1), hashFile(t, file2))
-}
-
-func hashFile(t *testing.T, path string) []byte {
-	t.Helper()
+func hashFile(ts *testscript.TestScript, path string) string {
 	hasher := sha1.New()
+	path = ts.MkAbs(path)
 	data, err := os.ReadFile(path)
 	if err != nil {
-		t.Fatalf("failed to read file content: %v", err)
+		ts.Fatalf("failed to read file: %v", err)
 	}
 	hasher.Write(data)
-	return hasher.Sum(nil)
+	return hex.EncodeToString(hasher.Sum(nil))
 }
 
-func ensureDzip() (func(), error) {
-	// t.Helper()
+func cmdChmtime(ts *testscript.TestScript, neg bool, args []string) {
+	if neg {
+		ts.Fatalf("negation not supported for chmtime")
+	}
+	var mtime time.Time
+	if len(args) == 2 {
+		ts.Fatalf("temporary restriction - passing time not supported")
+	} else {
+		mtime = time.Now().Local().Add(time.Hour)
+	}
+	ts.Logf("changing mtime")
+	if err := os.Chtimes(args[0], mtime, mtime); err != nil {
+		ts.Logf("changed mtime to %s", mtime)
+		ts.Fatalf("failed to change mtime for file: %v", err)
+	}
+}
 
-	dzipExecutable = "./__test_dzip.test"
-	if err := exec.Command("go", "build", "-o", dzipExecutable).Run(); err != nil {
-		return nil, err
-		// t.Fatalf("failed to build dzip: %v", err)
+func cmdHasExec(ts *testscript.TestScript, neg bool, args []string) {
+	if len(args) != 1 {
+		ts.Fatalf("usage: hasexec <file>")
+	}
+	stat, err := os.Stat(ts.MkAbs(args[0]))
+	if err != nil {
+		ts.Fatalf("failed to stat file %v: %v", args[0], err)
+	}
+	permissions := stat.Mode().Perm()
+	if permissions&0111 != 0 {
+		if neg {
+			ts.Fatalf("file %q has exec unexpected exec flag", args[0])
+		}
+	} else {
+		if !neg {
+			ts.Fatalf("file %q does not have exec flag", args[0])
+		}
 	}
 
-	return func() {
-		if err := os.Remove(dzipExecutable); err != nil {
-
-			_, _ = fmt.Fprintf(os.Stderr, "failed to clean up, unable to delete %v: %v", dzipExecutable, err)
-		}
-	}, nil
 }

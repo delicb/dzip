@@ -1,0 +1,12 @@
+# fail to create file that already exists
+! exec dzip foo.zip $WORK/file_a
+
+# create with override option
+exec dzip -O foo.zip $WORK/file_a
+exists foo.zip
+
+-- file_a --
+content of file a
+
+-- foo.zip --
+non-empty

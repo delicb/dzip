@@ -1,0 +1,17 @@
+# create zip
+exec dzip foo.zip file_a dir/file_b
+stdout 'adding'
+stdout 'file_a'
+stdout 'file_b'
+exists foo.zip
+
+mkdir extract
+exec unzip foo.zip -d extract
+cmpfiles file_a extract/file_a
+cmpfiles dir/file_b extract/dir/file_b
+
+-- file_a --
+content of file a
+
+-- dir/file_b --
+content of file b
